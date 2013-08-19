@@ -1,5 +1,6 @@
 package com.xicojunior.jediscrud.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -89,7 +90,7 @@ public class UserDAO {
 	 */
 	public User update(User user){
 		String userInfoKey = Keys.USER_DATA.formated(String.valueOf(user.getId()));
-		jedis.hmset(Keys.USER_DATA.formated(userInfoKey),BeanUtil.toMap(user));
+		jedis.hmset(userInfoKey,BeanUtil.toMap(user));
 		return user;
 	}
 	
@@ -98,7 +99,24 @@ public class UserDAO {
 	 * @return
 	 */
 	public List<User> list(){
-		return null;
+		List<User> users = new ArrayList<User>();
+		//Get all user ids from the redis list using LRANGE
+		List<String> allUserIds = jedis.lrange(Keys.USER_ALL.key(), 0, -1);
+		if(allUserIds != null && !allUserIds.isEmpty()){
+			List<Response<Map<String,String>>> responseList = new ArrayList<Response<Map<String,String>>>();
+			
+			Pipeline pipeline = jedis.pipelined();
+			for(String userId : allUserIds){
+				//call HGETALL for each user id
+				responseList.add(pipeline.hgetAll(Keys.USER_DATA.formated(userId)));
+			}
+			pipeline.sync();
+			//iterate over the pipelined results
+			for(Response<Map<String, String>> properties : responseList){
+				users.add(BeanUtil.populate(properties.get(), new User()));
+			}
+		}
+		return users;
 	}
 	
 }
