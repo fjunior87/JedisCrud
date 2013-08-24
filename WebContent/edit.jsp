@@ -18,6 +18,7 @@
 			<li>Gender: <input type="text" name="gender" value="${user.gender}"/></li>
 		</ul>
 		<input type="submit" value="Submit"/>
+		<input type="button" value="Cancel" onclick="document.location.href='UserController'" />
 	</form>
 	
 </body>
