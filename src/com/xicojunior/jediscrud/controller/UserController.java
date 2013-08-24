@@ -1,22 +1,22 @@
 package com.xicojunior.jediscrud.controller;
 
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
-import javax.annotation.Generated;
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.xicojunior.jediscrud.dao.UserDAO;
+import org.apache.commons.beanutils.BeanUtilsBean;
+
 import com.xicojunior.jediscrud.model.User;
+import com.xicojunior.jediscrud.service.UserService;
+import com.xicojunior.jediscrud.util.BeanUtil;
 
 /**
  * Servlet implementation class UserController
@@ -25,7 +25,7 @@ import com.xicojunior.jediscrud.model.User;
 public class UserController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
-	@Inject UserDAO userDao;
+	@Inject UserService userService;
 	
     /**
      * Default constructor. 
@@ -39,48 +39,85 @@ public class UserController extends HttpServlet {
 	 */
    
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		User user = new User("Junior", "Ribeiro", "fjunior@gmail.com", "M", 0);
-		userDao.addUser(user);
 		
-		PrintWriter writer = response.getWriter();  
-		writer.print("New User Id:" + user.getId());
-		
-		user = new User("Junior1", "Ribeiro2", "fjunior2@gmail.com", "M", 0);
-		userDao.addUser(user);
-		
-		writer.print("New User Id2:" + user.getId());
-		writer.print("Hello World" + userDao);
-		
-		List<User> users = userDao.list();
-		for(User u : users){
-			writer.print(  u.getId() + " " + u.getEmail() + "<br/>");
+		String action = request.getParameter("action");
+		if(action == null || action.equals("") || action.equals("list")){
+			dispatch(request, response, list(request));
+			return;
 		}
 		
-		userDao.remove(2);
-		
-		users = userDao.list();
-		for(User u : users){
-			writer.print(  u.getId() + " " + u.getEmail() + "<br/>");
+		if(action.equals("update")){
+			dispatch(request, response, update(request));
+			return;
 		}
 		
-		user = userDao.getUser(3);
-		user.setEmail("emial3");
-		userDao.update(user);
-		
-		users = userDao.list();
-		for(User u : users){
-			writer.print(  u.getId() + " " + u.getEmail() + "<br/>");
+		if(action.equals("read")){
+			long userId = Long.valueOf(request.getParameter("id"));
+			dispatch(request, response, read(request, userId));
+			return;
+		}
+		if(action.equals("edit")){
+			long userId = Long.valueOf(request.getParameter("id"));
+			dispatch(request, response, edit(request, userId));
+			return;
 		}
 		
-		writer.flush();
+		if(action.equals("delete")){
+			long userId = Long.valueOf(request.getParameter("id"));
+			dispatch(request, response, delete(request, userId));
+			return;
+		}
+		
+		if(action.equals("create")){
+			dispatch(request, response, create(request));
+			return;
+		}
 		
 	}
-
+	
+	
+	
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
+		doGet(request, response);
 	}
-
+	
+	protected String list(HttpServletRequest request){
+		request.setAttribute("users", userService.list());
+		return "index.jsp";
+	}
+	
+	protected String read(HttpServletRequest request, long userId){
+		request.setAttribute("user", userService.getUser(userId));
+		return "detail.jsp";
+	}
+	
+	protected String edit(HttpServletRequest request, long userId){
+		request.setAttribute("user", userService.getUser(userId));
+		return "edit.jsp";
+	}
+	
+	protected String update(HttpServletRequest request){
+		request.setAttribute("user", userService.update(BeanUtil.populate(request.getParameterMap(), new User())));
+		return "detail.jsp";
+	}
+	
+	protected String delete(HttpServletRequest request, long userId){
+		userService.delete(userId);
+		request.setAttribute("users", userService.list());
+		return "index.jsp";
+	}
+	
+	protected String create(HttpServletRequest request){
+		request.setAttribute("user", userService.addUser(BeanUtil.populate(request.getParameterMap(), new User())));
+		return "detail.jsp";
+	}
+	
+	protected void dispatch(HttpServletRequest request, HttpServletResponse response, String path) throws ServletException, IOException{
+		RequestDispatcher dispatcher = request.getRequestDispatcher(path);
+		dispatcher.forward(request, response);
+	}
+	
 }

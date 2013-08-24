@@ -26,7 +26,7 @@ public class BeanUtil {
 	}
 	
 	
-	public static <T extends Object>T populate(Map<String, String> properties, T object){
+	public static <T extends Object>T populate(Map properties, T object){
 		try {
 			BeanUtilsBean.getInstance().populate(object, properties);
 		} catch (IllegalAccessException e) {

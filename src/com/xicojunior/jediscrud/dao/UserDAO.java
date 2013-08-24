@@ -21,7 +21,7 @@ import com.xicojunior.jediscrud.util.BeanUtil;
  * @author Usuario
  *
  */
-@Named
+
 public class UserDAO {
 	
 	

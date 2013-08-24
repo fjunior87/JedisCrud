@@ -24,6 +24,7 @@ public class JedisConnectionFactory {
 	}
 	
 	public void returnResource(@Disposes Jedis jedis){
+		System.out.println("Returning jedis Connection");
 		jedisPool.returnResource(jedis);
 	}
 	
